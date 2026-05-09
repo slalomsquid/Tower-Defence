@@ -95,7 +95,7 @@ class Player():
 
 class Spawner():
     def __init__(self, pos, frequency, delay):
-        self.pos : list[list] = pos
+        self.pos = pos
         self.frequency : float = frequency
         self.time_since_last : float = frequency-delay
 

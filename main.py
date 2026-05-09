@@ -5,7 +5,7 @@ pygame.init()
 clock = pygame.time.Clock()
 
 SCREEN = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
-pygame.display.set_caption("2D Shooter")
+pygame.display.set_caption("Tower defence")
 
 def draw(array : list[list], enemies : list[Enemy], player : Player, points : list[tuple]):
     SCREEN.fill(constants.BLACK)
