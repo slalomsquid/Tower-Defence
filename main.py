@@ -1,5 +1,5 @@
 import constants, keybinds, pygame, pygameUtils, numpy as np
-from classes import Enemy, Player, Spawner, Tower
+from classes import Enemy, Player, Spawner, Tower, Turret
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -8,7 +8,7 @@ SCREEN = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
 pygame.display.set_caption("Tower defence")
 
 # def draw(array : list[list], enemies : list[Enemy], player : Player, points : list[tuple], money):
-def draw(array : list[list], enemies : list[Enemy], points : list[tuple], money):
+def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], points : list[tuple], money):
     SCREEN.fill(constants.BLACK)
     
     for row_idx, row in enumerate(array):
@@ -24,8 +24,8 @@ def draw(array : list[list], enemies : list[Enemy], points : list[tuple], money)
                     pygame.draw.rect(SCREEN, constants.DARK_PURPLE, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
                 case 3:
                     pygame.draw.rect(SCREEN, constants.CYAN, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
-                case 4:
-                    pygame.draw.circle(SCREEN, constants.GREY, pygameUtils.get_centre_pos_from_idx((col_idx, row_idx), constants.GRID_SIZE), constants.GRID_SIZE//2-1)
+                # case 4:
+                #     pygame.draw.circle(SCREEN, constants.GREY, pygameUtils.get_centre_pos_from_idx((col_idx, row_idx), constants.GRID_SIZE), constants.GRID_SIZE//2-1)
 
     for enemy in enemies:
         # enemy_rect = pygame.Rect(0,0, enemy.width, enemy.height)
@@ -80,6 +80,8 @@ def main():
 
     # enemies : list[Enemy] = [Enemy(15, (2, 3), 10)]
     enemies : list[Enemy] = []
+
+    turrets : list[Turret] = []
 
     # player = Player(10, (8, 4))
 
@@ -136,7 +138,7 @@ def main():
                 # print(ans)
                 points += ans
 
-        draw(map_array, enemies, points, money)
+        draw(map_array, enemies, turrets, points, money)
 
 if __name__ == "__main__":
     main()

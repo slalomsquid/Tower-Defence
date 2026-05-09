@@ -123,5 +123,16 @@ class Tower():
 
         pass
 
+class Turret():
+    def __init__(self, pos : tuple, health):
+        self.x : int = pos[0]
+        self.y : int = pos[1]
+        self.rect = pygame.Rect(self.x, self.y, constants.GRID_SIZE, constants.GRID_SIZE)
+        self.health = health
+
+    def update(self, dt, enemies):
+
+        pass
+
 if __name__ == "__main__":
     print("This is a utility file, not meant to be run directly")
