@@ -1,5 +1,5 @@
 import constants, keybinds, pygame, pygameUtils, numpy as np
-from classes import Enemy, Player, Spawner
+from classes import Enemy, Player, Spawner, Tower
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -20,7 +20,9 @@ def draw(array : list[list], enemies : list[Enemy], player : Player, points : li
                     # Multiply by grid size to get screen coord
                     pygame.draw.rect(SCREEN, constants.WHITE, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
                 case 2:
-                    pygame.draw.rect(SCREEN, constants.PURPLE, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
+                    pygame.draw.rect(SCREEN, constants.DARK_PURPLE, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
+                case 3:
+                    pygame.draw.rect(SCREEN, constants.CYAN, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
 
     for enemy in enemies:
         # enemy_rect = pygame.Rect(0,0, enemy.width, enemy.height)
@@ -46,7 +48,7 @@ def main():
         [2,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [0,1,0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,0,0,0,0,1,3,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [0,1,1,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -58,10 +60,16 @@ def main():
 
     spawners : list[Spawner] = []
 
+    tower = Tower((0,0), 100)
+
     for row_idx, row in enumerate(map_array):
         for col_idx, item in enumerate(row):
-            if item == 2:
-                spawners.append(Spawner((col_idx, row_idx), 2, 5))
+            match item:
+                case 2:
+                    spawners.append(Spawner((col_idx, row_idx), 2, 0))
+                case 3:
+                    tower.x, tower.y = col_idx, row_idx
+
 
     # enemies : list[Enemy] = [Enemy(15, (2, 3), 10)]
     enemies : list[Enemy] = []
@@ -115,7 +123,7 @@ def main():
             spawner.update(delta_time, enemies)
 
         for enemy in enemies:
-            if ans := enemy.handle_movement(delta_time, map_array, player):
+            if ans := enemy.handle_movement(delta_time, map_array, tower):
                 # print(ans)
                 points += ans
 

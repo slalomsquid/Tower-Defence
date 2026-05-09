@@ -29,8 +29,8 @@ class Enemy():
     #         self.y, self.x = next_pos
     #         self.rect.x, self.rect.y = (0,0)
 
-    def handle_movement(self, dt, array, player):
-        path : list[tuple] = pygameUtils.find_path(array, (self.y, self.x), (player.y, player.x))
+    def handle_movement(self, dt, array, target):
+        path : list[tuple] = pygameUtils.find_path(array, (self.y, self.x), (target.y, target.x))
         # Cancel if there is not enough points (0 is always the start pos)
         if len(path) < 2:
             return
@@ -44,7 +44,7 @@ class Enemy():
         # current_rect_pos = np.array(pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)) + np.array((self.rect.centerx, self.rect.centery))
         current_rect_pos = np.array(current_grid_pos) + np.array((self.rect.centerx, self.rect.centery))
         # current_rect_pos = np.array(pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)) + np.array((self.rect.centerx, self.rect.centery))
-        player_rect_pos = pygameUtils.get_centre_pos_from_idx((player.x, player.y), constants.GRID_SIZE)
+        player_rect_pos = pygameUtils.get_centre_pos_from_idx((target.x, target.y), constants.GRID_SIZE)
         # return [pygameUtils.get_centre_pos_from_idx(next_coord, constants.GRID_SIZE), current_rect_pos, player_rect_pos]
         
         new_rect_pos = pygameUtils.move_towards(current_rect_pos, next_pos, self.speed*dt)
@@ -77,7 +77,7 @@ class Enemy():
 
 
 class Player():
-    def __init__(self, size,  pos : tuple):
+    def __init__(self, size, pos : tuple):
         self.rect = pygame.Rect(-size/2, -size/2, size, size)
         """rect x,y is an offset from the center (declared by self.x and y)"""
         self.x : int = pos[0]
@@ -108,6 +108,17 @@ class Spawner():
             enemies.append(Enemy(15, self.pos, 10))
 
         self.time_since_last += dt
+
+class Tower():
+    def __init__(self, pos : tuple, health):
+        self.x : int = pos[0]
+        self.y : int = pos[1]
+        self.rect = pygame.Rect(self.x, self.y, constants.GRID_SIZE, constants.GRID_SIZE)
+        self.health = health
+
+    def update(self, dt, enemies):
+
+        pass
 
 if __name__ == "__main__":
     print("This is a utility file, not meant to be run directly")

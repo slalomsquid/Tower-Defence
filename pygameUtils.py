@@ -280,11 +280,13 @@ def find_path(grid, start, end):
         for dr, dc in directions:
             nr, nc = curr[0] + dr, curr[1] + dc
             
-            if 0 <= nr < rows and 0 <= nc < cols and \
-               grid[nr][nc] == 0 and (nr, nc) not in parent_map:
-                
-                parent_map[(nr, nc)] = curr
-                queue.append((nr, nc))
+            # if 0 <= nr < rows and 0 <= nc < cols and \
+            #     grid[nr][nc] == 0 and (nr, nc) not in parent_map:
+
+            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] != 1 and (nr, nc) not in parent_map:
+                    
+                    parent_map[(nr, nc)] = curr
+                    queue.append((nr, nc))
 
     path : list = []       
     return path
