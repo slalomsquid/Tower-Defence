@@ -8,7 +8,7 @@ font = pygame.font.SysFont("Arial", 40)
 def render_text(text, pos, color, canv, size=1, center=False, transparent=False):
     font_obj = pygame.font.SysFont(None, size) 
     if transparent:
-        text_surface = pygame.surface(pygame.SRCALPHA)
+        text_surface = pygame.Surface((100, 100), pygame.SRCALPHA)
         text_surface = text_surface.convert_alpha()
     else:
         text_surface = font_obj.render(str(text), False, color)
@@ -230,7 +230,8 @@ def find_path(grid, start, end):
     # Validation: start/end within bounds and not on an obstacle
     for r, c in [start, end]:
         if not (0 <= r < rows and 0 <= c < cols) or grid[r][c] == 1:
-            return None
+            path : list = [] 
+            return path
 
     queue = deque([start])
     parent_map = {start: None} # Tracks path lineage
@@ -241,7 +242,7 @@ def find_path(grid, start, end):
         
         if curr == end:
             # Reconstruct path from end to start
-            path = []
+            path : list = []
             while curr is not None:
                 path.append(curr)
                 curr = parent_map[curr]
@@ -255,8 +256,9 @@ def find_path(grid, start, end):
                 
                 parent_map[(nr, nc)] = curr
                 queue.append((nr, nc))
-                
-    return None
+
+    path : list = []       
+    return path
 
 if __name__ == "__main__":
     print("This is a utility file, not meant to be run directly")
@@ -269,5 +271,14 @@ if __name__ == "__main__":
         [0, 1, 1, 0]
     ]
 
-    path = find_path(grid, (0,0), (3,3))
+    grid = [
+        [0,1,1,1,1,1,1,1,1,1,1],
+        [0,1,0,0,0,0,0,0,0,0,1],
+        [0,1,0,0,0,0,0,0,0,0,1],
+        [0,1,0,0,0,0,0,0,0,0,1],
+        [0,1,0,0,0,0,0,0,0,0,1],
+        [0,1,1,1,1,0,0,0,0,1,1]
+    ]
+
+    path = find_path(grid, (2,2), (5,5))
     print(f"Path coordinates: {path}")

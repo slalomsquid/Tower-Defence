@@ -37,9 +37,9 @@ def main():
         [0,1,1,1,1,0,0,0,0,1,1]
     ]
 
-    enemies : list[Enemy] = [Enemy(5, 5, (10, 10))] 
+    enemies : list[Enemy] = [Enemy(5, 5, (2, 3))] 
 
-    player = Player(5, 5, (20, 20))
+    player = Player(5, 5, (8, 5))
 
     running = True
 
@@ -73,7 +73,8 @@ def main():
             running = False
 
         for enemy in enemies:
-            enemy.handle_movement(delta_time, map_array, player)
+            if ans := enemy.handle_movement(delta_time, map_array, player):
+                print(ans)
 
         draw(map_array, enemies, player)
 
