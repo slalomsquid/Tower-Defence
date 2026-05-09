@@ -1,7 +1,7 @@
 # This file will not import anything except pygame, only imported by other classes
 import pygame
 
-FPS = 5
+FPS = 10
 WIDTH, HEIGHT = 500, 500
 ORIGIN = [WIDTH//2, HEIGHT//2]
 

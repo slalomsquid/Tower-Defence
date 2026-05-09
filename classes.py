@@ -75,7 +75,6 @@ class Enemy():
         # return [new_rect_pos]
         # next_rect_pos = pygameUtils.move_towards(np.array(self.rect.centerx, self.rect.centery), np.array(player.))
 
-        
 
 class Player():
     def __init__(self, size,  pos : tuple):
@@ -93,6 +92,22 @@ class Player():
         self.rect.centerx, self.rect.centery = pygameUtils.move_towards((self.rect.centerx, self.rect.centery), np.array([player.x, player.y])*constants.GRID_SIZE, self.speed*dt)
         if (self.x*constants.GRID_SIZE+self.rect.centerx,self.y*constants.GRID_SIZE+self.rect.centery) == next_pos:
             print("yya")
+
+class Spawner():
+    def __init__(self, pos, frequency, delay):
+        self.pos : list[list] = pos
+        self.frequency : float = frequency
+        self.time_since_last : float = frequency-delay
+
+    def update(self, dt, enemies):
+
+        if self.time_since_last >= self.frequency:
+            self.time_since_last = 0.0
+
+            # enemies.append(Enemy(15, (2, 3), 10))
+            enemies.append(Enemy(15, self.pos, 10))
+
+        self.time_since_last += dt
 
 if __name__ == "__main__":
     print("This is a utility file, not meant to be run directly")

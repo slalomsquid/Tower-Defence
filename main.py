@@ -1,5 +1,5 @@
 import constants, keybinds, pygame, pygameUtils, numpy as np
-from classes import Enemy, Player
+from classes import Enemy, Player, Spawner
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -15,9 +15,12 @@ def draw(array : list[list], enemies : list[Enemy], player : Player, points : li
         for col_idx, col in enumerate(row):
             pygame.draw.line(SCREEN, constants.WHITE, (col_idx*constants.GRID_SIZE,0), (col_idx*constants.GRID_SIZE,constants.HEIGHT))
             # if array[row_idx][col_idx]:
-            if col:
-                # Multiply by grid size to get screen coord
-                pygame.draw.rect(SCREEN, constants.WHITE, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
+            match col:
+                case 1:
+                    # Multiply by grid size to get screen coord
+                    pygame.draw.rect(SCREEN, constants.WHITE, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
+                case 2:
+                    pygame.draw.rect(SCREEN, constants.PURPLE, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
 
     for enemy in enemies:
         # enemy_rect = pygame.Rect(0,0, enemy.width, enemy.height)
@@ -39,19 +42,35 @@ def draw(array : list[list], enemies : list[Enemy], player : Player, points : li
 def main():
 
     map_array = [
-        [0,1,1,1,1,1,1,1,1,1,1],
-        [0,1,0,0,0,0,0,0,0,0,1],
-        [0,1,0,0,0,0,0,0,0,0,1],
-        [0,1,0,0,0,0,0,0,0,0,1],
-        [0,1,0,0,0,0,0,0,0,0,1],
-        [0,1,1,1,1,0,0,0,0,1,1]
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [2,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,0,0,0,0,1,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,1,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
     ]
 
-    enemies : list[Enemy] = [Enemy(10, (2, 3), 10)] 
+    spawners : list[Spawner] = []
+
+    for row_idx, row in enumerate(map_array):
+        for col_idx, item in enumerate(row):
+            if item == 2:
+                spawners.append(Spawner((col_idx, row_idx), 2, 5))
+
+    # enemies : list[Enemy] = [Enemy(15, (2, 3), 10)]
+    enemies : list[Enemy] = []
 
     player = Player(10, (8, 4))
 
     points : list[tuple] = []
+
+    timer : float = 0.0
 
     running = True
 
@@ -61,6 +80,11 @@ def main():
         points.clear()
 
         delta_time : float = clock.tick(constants.FPS) / 1000.0
+        timer += delta_time
+
+        if timer >= 2:
+            timer = 0.0
+            print(clock.get_fps())
 
         # Event handling
 
@@ -87,11 +111,13 @@ def main():
             pygame.quit()
             running = False
 
+        for spawner in spawners:
+            spawner.update(delta_time, enemies)
+
         for enemy in enemies:
             if ans := enemy.handle_movement(delta_time, map_array, player):
                 # print(ans)
                 points += ans
-                
 
         draw(map_array, enemies, player, points)
 
