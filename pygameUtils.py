@@ -5,14 +5,15 @@ pygame.init()
 
 font = pygame.font.SysFont("Arial", 40)
 
-def render_text(text, pos, color, canv, size=1, center=False, transparent=False):
+def render_text(text : str, pos, color, canv, size=100, center=False, transparent=False):
     font_obj = pygame.font.SysFont(None, size) 
     if transparent:
-        text_surface = pygame.Surface((100, 100), pygame.SRCALPHA)
+        text_surface = pygame.Surface((500, 50), pygame.SRCALPHA)
         text_surface = text_surface.convert_alpha()
     else:
-        text_surface = font_obj.render(str(text), False, color)
+        text_surface = font_obj.render(text, False, color)
     text_rect = text_surface.get_rect()
+    text_rect.x, text_rect.y = (pos[0], pos[1])
     if center:
         text_rect.center = (pos[0], pos[1])
     canv.blit(text_surface, text_rect)
@@ -249,7 +250,7 @@ def create_view_cone_polygon(self):
     ]
     return points
 
-def find_path(grid, start, end):
+def find_path(grid:list[list], start:tuple, end:tuple, block:list[int]):
     """
     Finds the shortest path between start and end coordinates.
     start/end: tuples of (row, col)
@@ -263,7 +264,7 @@ def find_path(grid, start, end):
             return path
 
     queue = deque([start])
-    parent_map = {start: None} # Tracks path lineage
+    parent_map : dict = {start: None} # Tracks path lineage
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
     
     while queue:
@@ -283,10 +284,9 @@ def find_path(grid, start, end):
             # if 0 <= nr < rows and 0 <= nc < cols and \
             #     grid[nr][nc] == 0 and (nr, nc) not in parent_map:
 
-            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] != 1 and (nr, nc) not in parent_map:
-                    
-                    parent_map[(nr, nc)] = curr
-                    queue.append((nr, nc))
+            if 0 <= nr < rows and 0 <= nc < cols and grid[nr][nc] not in block and (nr, nc) not in parent_map:
+                parent_map[(nr, nc)] = curr
+                queue.append((nr, nc))
 
     path : list = []       
     return path
@@ -331,5 +331,5 @@ if __name__ == "__main__":
         [0,1,1,1,1,0,0,0,0,1,1]
     ]
 
-    path = find_path(grid, (2,2), (5,5))
+    path : list[tuple] = find_path(grid, (2,2), (5,5), [1])
     print(f"Path coordinates: {path}")

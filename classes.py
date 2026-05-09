@@ -11,6 +11,7 @@ class Enemy():
         self.width = size
         self.height = size
         self.speed = speed
+        self.block = [1,5,6,7,8]
 
     # def handle_movement(self, dt, array, player):
     #     path : list[tuple] = pygameUtils.find_path(array, (self.y,self.x), (player.y,player.x))
@@ -30,7 +31,7 @@ class Enemy():
     #         self.rect.x, self.rect.y = (0,0)
 
     def handle_movement(self, dt, array, target):
-        path : list[tuple] = pygameUtils.find_path(array, (self.y, self.x), (target.y, target.x))
+        path : list[tuple] = pygameUtils.find_path(array, (self.y, self.x), (target.y, target.x), self.block)
         # Cancel if there is not enough points (0 is always the start pos)
         if len(path) < 2:
             return
@@ -58,7 +59,9 @@ class Enemy():
         # self.rect.centerx = diff[0]
         # self.rect.centery = diff[1]
 
-        new_offset = new_rect_pos - np.array(current_grid_pos)
+        # new_offset = new_rect_pos - np.array(current_grid_pos)
+        # use the func, its more readable
+        new_offset = pygameUtils.get_difference(current_grid_pos, new_rect_pos)
         self.rect.centerx, self.rect.centery = new_offset[0], new_offset[1]
 
         # recalc
@@ -88,7 +91,7 @@ class Player():
         self.speed = 10
 
     def handle_movement(self, dt, array, player):
-        next_pos = pygameUtils.find_path(array, (self.y,self.x), (player.y,player.x))
+        next_pos = pygameUtils.find_path(array, (self.y,self.x), (player.y,player.x), [1,4])
         self.rect.centerx, self.rect.centery = pygameUtils.move_towards((self.rect.centerx, self.rect.centery), np.array([player.x, player.y])*constants.GRID_SIZE, self.speed*dt)
         if (self.x*constants.GRID_SIZE+self.rect.centerx,self.y*constants.GRID_SIZE+self.rect.centery) == next_pos:
             print("yya")
