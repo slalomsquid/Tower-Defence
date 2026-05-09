@@ -1,4 +1,4 @@
-import constants, keybinds, pygame
+import constants, keybinds, pygame, pygameUtils, numpy as np
 from classes import Enemy, Player
 
 pygame.init()
@@ -7,22 +7,32 @@ clock = pygame.time.Clock()
 SCREEN = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
 pygame.display.set_caption("2D Shooter")
 
-def draw(array, enemies, player):
+def draw(array : list[list], enemies : list[Enemy], player : Player, points : list[tuple]):
     SCREEN.fill(constants.BLACK)
-
+    
     for row_idx, row in enumerate(array):
+        pygame.draw.line(SCREEN, constants.WHITE, (0,row_idx*constants.GRID_SIZE), (constants.WIDTH,row_idx*constants.GRID_SIZE))
         for col_idx, col in enumerate(row):
+            pygame.draw.line(SCREEN, constants.WHITE, (col_idx*constants.GRID_SIZE,0), (col_idx*constants.GRID_SIZE,constants.HEIGHT))
             # if array[row_idx][col_idx]:
             if col:
                 # Multiply by grid size to get screen coord
                 pygame.draw.rect(SCREEN, constants.WHITE, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
 
     for enemy in enemies:
-        enemy_rect = pygame.Rect(enemy.x*10+enemy.rect.x,enemy.y*10+enemy.rect.y,enemy.rect.w,enemy.rect.h)
+        # enemy_rect = pygame.Rect(0,0, enemy.width, enemy.height)
+        enemy_rect = enemy.rect
+        enemy_rect.centerx, enemy_rect.centery = pygameUtils.get_centre_pos_from_idx((enemy.x, enemy.y), constants.GRID_SIZE)
+        # enemy_rect = pygame.Rect(enemy.x*constants.GRID_SIZE+enemy.rect.x,enemy.y*constants.GRID_SIZE+enemy.rect.y,enemy.rect.w,enemy.rect.h)
         pygame.draw.rect(SCREEN, constants.RED, enemy_rect)
 
-    player_rect = pygame.Rect(player.x*10+player.rect.x,player.y*10+player.rect.y,player.rect.w,player.rect.h)
+    # player_rect = pygame.Rect(player.x*constants.GRID_SIZE+player.rect.x,player.y*constants.GRID_SIZE+player.rect.y,player.rect.w,player.rect.h)
+    player_rect = player.rect
+    player_rect.centerx, player_rect.centery = pygameUtils.get_centre_pos_from_idx((player.x, player.y), constants.GRID_SIZE)
     pygame.draw.rect(SCREEN, constants.BLUE, player_rect)
+
+    for point in points:
+        pygame.draw.circle(SCREEN, constants.GREEN, point, 2)
 
     pygame.display.update()
 
@@ -37,13 +47,18 @@ def main():
         [0,1,1,1,1,0,0,0,0,1,1]
     ]
 
-    enemies : list[Enemy] = [Enemy(5, 5, (2, 3))] 
+    enemies : list[Enemy] = [Enemy(10, (2, 3))] 
 
-    player = Player(5, 5, (8, 5))
+    player = Player(10, (8, 4))
+
+    points : list[tuple] = []
 
     running = True
 
     while running:
+
+        # var resets
+        points.clear()
 
         delta_time = clock.tick(constants.FPS) / 1000.0
 
@@ -74,9 +89,11 @@ def main():
 
         for enemy in enemies:
             if ans := enemy.handle_movement(delta_time, map_array, player):
-                print(ans)
+                # print(ans)
+                points += ans
+                
 
-        draw(map_array, enemies, player)
+        draw(map_array, enemies, player, points)
 
 if __name__ == "__main__":
     main()

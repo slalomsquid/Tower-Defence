@@ -260,6 +260,26 @@ def find_path(grid, start, end):
     path : list = []       
     return path
 
+def get_grid_index(x, y, gridsize):
+
+    offset = gridsize / 2
+
+    # Calculate indices
+    col = round((x - offset) / gridsize)
+    row = round((y - offset) / gridsize)
+
+    # Boundary check
+    col = max(0, min(col, offset - 1))
+    row = max(0, min(row, offset - 1))
+
+    coord : tuple = (col, row)
+    return coord
+
+def get_centre_pos_from_idx(coord, gridsize):
+    # multiply both by gridsize then add half to for the centre
+    pos : tuple = (coord[0]*gridsize+gridsize*0.5, coord[1]*gridsize+gridsize*0.5)
+    return pos
+
 if __name__ == "__main__":
     print("This is a utility file, not meant to be run directly")
 
