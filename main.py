@@ -21,13 +21,13 @@ def draw(array : list[list], enemies : list[Enemy], player : Player, points : li
 
     for enemy in enemies:
         # enemy_rect = pygame.Rect(0,0, enemy.width, enemy.height)
-        enemy_rect = enemy.rect
-        enemy_rect.centerx, enemy_rect.centery = pygameUtils.get_centre_pos_from_idx((enemy.x, enemy.y), constants.GRID_SIZE)
+        enemy_rect = enemy.rect.copy()
+        enemy_rect.centerx, enemy_rect.centery = np.array(pygameUtils.get_centre_pos_from_idx((enemy.x, enemy.y), constants.GRID_SIZE)) + np.array([enemy.rect.centerx, enemy.rect.centery])
         # enemy_rect = pygame.Rect(enemy.x*constants.GRID_SIZE+enemy.rect.x,enemy.y*constants.GRID_SIZE+enemy.rect.y,enemy.rect.w,enemy.rect.h)
         pygame.draw.rect(SCREEN, constants.RED, enemy_rect)
 
     # player_rect = pygame.Rect(player.x*constants.GRID_SIZE+player.rect.x,player.y*constants.GRID_SIZE+player.rect.y,player.rect.w,player.rect.h)
-    player_rect = player.rect
+    player_rect = player.rect.copy()
     player_rect.centerx, player_rect.centery = pygameUtils.get_centre_pos_from_idx((player.x, player.y), constants.GRID_SIZE)
     pygame.draw.rect(SCREEN, constants.BLUE, player_rect)
 
@@ -47,7 +47,7 @@ def main():
         [0,1,1,1,1,0,0,0,0,1,1]
     ]
 
-    enemies : list[Enemy] = [Enemy(10, (2, 3))] 
+    enemies : list[Enemy] = [Enemy(10, (2, 3), 10)] 
 
     player = Player(10, (8, 4))
 
@@ -60,7 +60,7 @@ def main():
         # var resets
         points.clear()
 
-        delta_time = clock.tick(constants.FPS) / 1000.0
+        delta_time : float = clock.tick(constants.FPS) / 1000.0
 
         # Event handling
 

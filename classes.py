@@ -1,15 +1,16 @@
 import pygame, random, pygameUtils, constants, numpy as np
 
 class Enemy():
-    def __init__(self, size, pos : tuple):
+    def __init__(self, size, pos : tuple, speed=10):
         self.rect = pygame.Rect(0, 0, size, size)
+        self.rect.center = (0,0)
         """rect x,y is an offset from the center (declared by self.x and y)"""
         self.x : int = pos[0]
         """Not a screen pos, rather an in-game coord"""
         self.y : int = pos[1]
         self.width = size
         self.height = size
-        self.speed = 10
+        self.speed = speed
 
     # def handle_movement(self, dt, array, player):
     #     path : list[tuple] = pygameUtils.find_path(array, (self.y,self.x), (player.y,player.x))
@@ -33,12 +34,45 @@ class Enemy():
         # Cancel if there is not enough points (0 is always the start pos)
         if len(path) < 2:
             return
+        # work out abs coord values
         next_coord = path[1]
-        # current_rect_pos = (self.x*constants.GRID_SIZE+self.rect.centerx, self.y*constants.GRID_SIZE+self.rect.centery)
-        current_rect_pos = pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)
+        next_coord = (next_coord[1], next_coord[0])
+        next_pos = pygameUtils.get_centre_pos_from_idx(path[1], constants.GRID_SIZE)
+        # flip because it comes from the find_path func
+        next_pos = (next_pos[1], next_pos[0])
+        current_grid_pos = pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)
+        # current_rect_pos = np.array(pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)) + np.array((self.rect.centerx, self.rect.centery))
+        current_rect_pos = np.array(current_grid_pos) + np.array((self.rect.centerx, self.rect.centery))
+        # current_rect_pos = np.array(pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)) + np.array((self.rect.centerx, self.rect.centery))
         player_rect_pos = pygameUtils.get_centre_pos_from_idx((player.x, player.y), constants.GRID_SIZE)
         # return [pygameUtils.get_centre_pos_from_idx(next_coord, constants.GRID_SIZE), current_rect_pos, player_rect_pos]
-        return [current_rect_pos, pygameUtils.get_centre_pos_from_idx(next_coord, constants.GRID_SIZE), player_rect_pos]
+        
+        new_rect_pos = pygameUtils.move_towards(current_rect_pos, next_pos, self.speed*dt)
+
+        # self.rect.centerx, self.rect.centery = tuple(pygameUtils.get_difference(new_rect_pos, current_rect_pos))
+
+        # leaving this here like a gravestone for the 2+ hours i spent trying to figue out why it wouldnt move
+        # subtracting 2 lists just removes it
+        # diff = new_rect_pos - current_rect_pos
+        # self.rect.centerx, self.rect.centery = diff[0], diff[1]
+        # self.rect.centerx = diff[0]
+        # self.rect.centery = diff[1]
+
+        new_offset = new_rect_pos - np.array(current_grid_pos)
+        self.rect.centerx, self.rect.centery = new_offset[0], new_offset[1]
+
+        # recalc
+        current_rect_pos = np.array(current_grid_pos) + np.array((self.rect.centerx, self.rect.centery))
+
+        if pygameUtils.get_distance_between(current_rect_pos, next_pos) < 0.1:
+            self.x, self.y = next_coord
+            self.rect.centerx, self.rect.centery = (0,0)
+
+        # return [next_pos]
+        # return [current_grid_pos, current_rect_pos, next_pos]
+        # return [current_rect_pos, next_pos, player_rect_pos, new_rect_pos, diff]
+        # return [new_rect_pos, (self.rect.centerx, self.rect.centery)]
+        # return [new_rect_pos]
         # next_rect_pos = pygameUtils.move_towards(np.array(self.rect.centerx, self.rect.centery), np.array(player.))
 
         

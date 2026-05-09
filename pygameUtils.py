@@ -65,6 +65,10 @@ def draw_rotated_rect(screen, color, rect_dims, angle, center_pos):
 
 ### VECTOR MATH ###
 
+def get_difference(current, target):
+    """subtracts the vectors"""
+    return np.array(target) - np.array(current)
+
 def angle_to_vector(angle):
     """Returns a vector with a length of 1 for a given angle, <angle -> left, >angl -> right"""
     return np.round(np.array([np.cos(np.radians(angle+90)),np.sin(np.radians(angle+90))]), 4)
@@ -86,7 +90,9 @@ def get_vector_magnitude(vector):
     return np.linalg.norm(vector)
 
 def get_distance_between(vect1, vect2):
-    return np.linalg.norm(vect1 - vect2)
+    target = np.array(vect1)
+    current = np.array(vect2)
+    return np.linalg.norm(target - current)
 
 def simplify_vector(vector):
     if np.linalg.norm(vector) != 0:
@@ -141,12 +147,35 @@ def lerp_angle(start, end, t):
         to_dist += 360
     return (start + t * to_dist) % 360
 
+# def move_towards(current, target, max_distance_delta):
+#     """Moves towards a vector/value with a max step"""
+#     # to_vector = target - current
+#     to_vector = get_difference(target, current)
+#     dist = np.linalg.norm(to_vector)
+#     if dist <= max_distance_delta or dist == 0:
+#         return target
+#     return current + to_vector / dist * max_distance_delta
+
 def move_towards(current, target, max_distance_delta):
-    """Moves towards a vector/value with a max step"""
-    to_vector = target - current
-    dist = np.linalg.norm(to_vector)
-    if dist <= max_distance_delta or dist == 0:
+    direction = target - current
+    distance = np.linalg.norm(direction)
+
+    if distance <= max_distance_delta or distance == 0:
         return target
+
+    return current + (direction / distance) * max_distance_delta
+
+# def move_towards(current, target, max_distance_delta):
+#     """Moves towards a vector/value with a max step"""
+#     current = np.array(current)
+#     target = np.array(target)
+#     to_vector = target - current
+#     dist = np.linalg.norm(to_vector)
+    
+#     # If target is closer than max_distance_delta, or already there
+#     if dist <= max_distance_delta or dist < 1e-9: # 1e-9 to avoid division by zero
+#         return target
+        
     return current + to_vector / dist * max_distance_delta
 
 def move_towards_angle(current : float, target : float, max_distance_delta : float):
