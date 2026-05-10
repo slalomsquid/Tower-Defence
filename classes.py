@@ -154,8 +154,8 @@ class Cursor():
         for spawner in spawners:
             array[y][x] = 4
             path = pygameUtils.find_path(array, (spawner.pos[1], spawner.pos[0]), (tower.y, tower.x), [1,4])
-            print(path)
-            if len(path) < 2:
+            # print(path)
+            if not path:
                 array[y][x] = 0 # Clean up before leaving lol
                 return
         turrets.append(Turret(coord, 100))
