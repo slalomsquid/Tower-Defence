@@ -291,19 +291,21 @@ def find_path(grid:list[list], start:tuple, end:tuple, block:list[int]):
     path : list = []       
     return path
 
-def get_grid_index(x, y, gridsize):
+def get_grid_index(pos : tuple, gridsize):
 
     offset = gridsize / 2
 
-    # Calculate indices
-    col = round((x - offset) / gridsize)
-    row = round((y - offset) / gridsize)
+    # Calculate indices, dont use floor division, because rounding
+    col = round((pos[0] - offset) / gridsize)
+    row = round((pos[1] - offset) / gridsize)
 
     # Boundary check
     col = max(0, min(col, offset - 1))
     row = max(0, min(row, offset - 1))
 
-    coord : tuple = (col, row)
+    # make sure its int
+    coord : tuple = (int(col), int(row))
+    # coord : tuple = (col, row)
     return coord
 
 def get_centre_pos_from_idx(coord, gridsize):

@@ -11,7 +11,7 @@ class Enemy():
         self.width = size
         self.height = size
         self.speed = speed
-        self.block = [1,5,6,7,8]
+        self.block = [1,4,5,6,7,8]
 
     # def handle_movement(self, dt, array, player):
     #     path : list[tuple] = pygameUtils.find_path(array, (self.y,self.x), (player.y,player.x))
@@ -67,6 +67,7 @@ class Enemy():
         # recalc
         current_rect_pos = np.array(current_grid_pos) + np.array((self.rect.centerx, self.rect.centery))
 
+        # realign if close
         if pygameUtils.get_distance_between(current_rect_pos, next_pos) < 0.1:
             self.x, self.y = next_coord
             self.rect.centerx, self.rect.centery = (0,0)
@@ -124,13 +125,45 @@ class Tower():
         pass
 
 class Turret():
-    def __init__(self, pos : tuple, health):
-        self.x : int = pos[0]
-        self.y : int = pos[1]
+    def __init__(self, coord : tuple, health):
+        self.x : int = coord[0]
+        self.y : int = coord[1]
         self.rect = pygame.Rect(self.x, self.y, constants.GRID_SIZE, constants.GRID_SIZE)
         self.health = health
 
     def update(self, dt, enemies):
+
+        pass
+
+class Cursor():
+    def __init__(self, pos : tuple, color : tuple, alpha : int):
+        self.x : int = pos[0]
+        self.y : int = pos[1]
+        self.rect = pygame.Rect(self.x, self.y, constants.GRID_SIZE, constants.GRID_SIZE)
+        self.color : tuple = color + (alpha,)
+
+    def move_to_mouse(self, pos : tuple):
+        coord = pygameUtils.get_grid_index(pos, constants.GRID_SIZE)
+        self.x, self.y = coord
+
+    def place(self, pos : tuple, turrets : list[Turret], array, spawners : list[Spawner], tower : Tower):
+        coord = pygameUtils.get_grid_index(pos, constants.GRID_SIZE)
+        x, y = coord
+        if array[y][x] != 0:
+            return
+        for spawner in spawners:
+            array[y][x] = 4
+            path = pygameUtils.find_path(array, (spawner.pos[1], spawner.pos[0]), (tower.y, tower.x), [1,4])
+            print(path)
+            if len(path) < 2:
+                array[y][x] = 0 # Clean up before leaving lol
+                return
+        turrets.append(Turret(coord, 100))
+        array[y][x] = 4
+        # print(f"placement at {coord}")
+        # print(y)
+
+    def update_pos(self, dt, enemies):
 
         pass
 

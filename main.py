@@ -1,5 +1,5 @@
 import constants, keybinds, pygame, pygameUtils, numpy as np
-from classes import Enemy, Player, Spawner, Tower, Turret
+from classes import Enemy, Player, Spawner, Tower, Turret, Cursor
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -8,7 +8,7 @@ SCREEN = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
 pygame.display.set_caption("Tower defence")
 
 # def draw(array : list[list], enemies : list[Enemy], player : Player, points : list[tuple], money):
-def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], points : list[tuple], money):
+def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], points : list[tuple], money, cursor : Cursor):
     SCREEN.fill(constants.BLACK)
     
     for row_idx, row in enumerate(array):
@@ -34,6 +34,9 @@ def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], poin
         # enemy_rect = pygame.Rect(enemy.x*constants.GRID_SIZE+enemy.rect.x,enemy.y*constants.GRID_SIZE+enemy.rect.y,enemy.rect.w,enemy.rect.h)
         pygame.draw.rect(SCREEN, constants.RED, enemy_rect)
 
+    for turret in turrets:
+        target_pos = pygameUtils.get_centre_pos_from_idx((turret.x, turret.y), constants.GRID_SIZE)
+        pygame.draw.circle(SCREEN, constants.GREY, target_pos, constants.GRID_SIZE//2-1)
 
     # left here so i dont forget how to make them
     # player_rect = pygame.Rect(player.x*constants.GRID_SIZE+player.rect.x,player.y*constants.GRID_SIZE+player.rect.y,player.rect.w,player.rect.h)
@@ -46,6 +49,12 @@ def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], poin
 
     pygameUtils.render_text(str(money), (constants.WIDTH-70, 10), constants.GREEN, SCREEN, 25)
 
+    cursor_rect = cursor.rect.copy()
+    cursor_rect.centerx, cursor_rect.centery = pygameUtils.get_centre_pos_from_idx((cursor.x, cursor.y), constants.GRID_SIZE)
+    display = pygame.Surface((constants.WIDTH, constants.HEIGHT), pygame.SRCALPHA)
+    pygame.draw.rect(display, cursor.color, cursor_rect)
+    SCREEN.blit(display, (0,0))
+
     pygame.display.update()
 
 def main():
@@ -54,8 +63,8 @@ def main():
         [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [2,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [0,1,0,0,0,0,0,0,4,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [0,1,0,0,0,0,1,3,4,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [0,1,0,0,0,0,1,3,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [0,1,1,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
         [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
@@ -85,6 +94,8 @@ def main():
 
     # player = Player(10, (8, 4))
 
+    cursor = Cursor((0,0), constants.BLUE, 150)
+
     points : list[tuple] = []
 
     money : int = 100
@@ -113,9 +124,14 @@ def main():
                 case pygame.QUIT:
                     running = False
                 case pygame.MOUSEMOTION:
-                    # mouse_pos = [event.pos[0] + offset_x, event.pos[1] + offset_y]
+                    mouse_pos = (event.pos[0], event.pos[1])
+                    cursor.move_to_mouse(mouse_pos)
                     # mouse_rel = event.rel   
                     pass
+                case pygame.MOUSEBUTTONDOWN:
+                    match event.button:
+                        case 1: # 1 represents the left mouse button
+                            cursor.place(mouse_pos, turrets, map_array, spawners, tower)
                 case pygame.KEYDOWN:
                     if any(event.key == key for key in keybinds.shoot):
                         # bullet = Bullet(player.rect.centerx, player.rect.centery, player.rotation, 5)
@@ -138,7 +154,7 @@ def main():
                 # print(ans)
                 points += ans
 
-        draw(map_array, enemies, turrets, points, money)
+        draw(map_array, enemies, turrets, points, money, cursor)
 
 if __name__ == "__main__":
     main()
