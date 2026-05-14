@@ -2,10 +2,12 @@
 import pygame
 
 FPS = 20
-WIDTH, HEIGHT = 500, 500
+WIDTH, HEIGHT = 600, 600
 ORIGIN = [WIDTH//2, HEIGHT//2]
 
 GRID_SIZE : int = 50
+GRID_X = 9
+GRID_Y = 9
 
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)

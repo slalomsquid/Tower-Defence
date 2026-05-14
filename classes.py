@@ -12,6 +12,7 @@ class Enemy():
         self.height = size
         self.speed = speed
         self.block = [1,4,5,6,7,8]
+        self.max_health = health
         self.health = health
         self.damage = 10
 
@@ -83,9 +84,19 @@ class Enemy():
 
     def draw(self):
         surf : pygame.Surface = pygame.Surface((constants.WIDTH, constants.HEIGHT), pygame.SRCALPHA)
+        grid_pos = pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)
+        center_pos = np.array(grid_pos + np.array([self.rect.centerx, self.rect.centery]))
         enemy_rect = self.rect.copy()
-        enemy_rect.centerx, enemy_rect.centery = np.array(pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)) + np.array([self.rect.centerx, self.rect.centery])
+        enemy_rect.centerx, enemy_rect.centery = center_pos
         pygame.draw.rect(surf, constants.RED, enemy_rect)
+        health_rect = pygame.Rect(0,0,15,2)
+        health_rect.center = (center_pos[0], center_pos[1]-self.height)
+        tl = health_rect.topleft
+        pygame.draw.rect(surf, constants.LIGHT_GREY, health_rect)
+        health_rect = pygame.Rect(0,0,15*(self.health/self.max_health),2)
+        health_rect.topleft = tl
+        pygame.draw.rect(surf, constants.RED, health_rect)
+
         return surf
 
 class Player():
@@ -161,9 +172,12 @@ class Bullet():
 
         for enemy in enemies:
             # enemy_pos = pygameUtils.get_centre_pos_from_idx(enemy.x, enemy.y)
-            enemy_pos = pygameUtils.get_centre_pos_from_idx((enemy.x, enemy.y), constants.GRID_SIZE)
-            if pygameUtils.get_distance_between(tuple(enemy_pos), tuple(self.pos)) < enemy.height:
-                enemies.remove(enemy)
+            enemy_grid_pos = pygameUtils.get_centre_pos_from_idx((enemy.x, enemy.y), constants.GRID_SIZE)
+            enemy_center_pos = np.array(enemy_grid_pos + np.array([enemy.rect.centerx, enemy.rect.centery]))
+            if pygameUtils.get_distance_between(tuple(enemy_center_pos), tuple(self.pos)) < enemy.height:
+                enemy.health -= self.damage
+                if enemy.health <= 0:
+                    enemies.remove(enemy)
                 self.kill = True
                 break
 
@@ -177,6 +191,7 @@ class Turret():
         self.x : int = coord[0]
         self.y : int = coord[1]
         self.rect = pygame.Rect(self.x, self.y, constants.GRID_SIZE, constants.GRID_SIZE)
+        self.max_health = health
         self.health = health
         self.frequency : float = frequency
         self.angle : float = 0.0
@@ -237,7 +252,7 @@ class Turret():
 
                 # 5. Shooting Logic
                 if self.time_since_last >= self.frequency:
-                    bullets.append(Bullet(self.center, 2, 10, pygameUtils.angle_to_vector(self.angle), 100))
+                    bullets.append(Bullet(self.center, 2, 10, pygameUtils.angle_to_vector(self.angle+random.randrange(-1,1)*0.5), 50))
                     self.time_since_last = 0.0
 
             # else:
@@ -263,7 +278,8 @@ class Cursor():
 
     def move_to_mouse(self, pos : tuple):
         coord = pygameUtils.get_grid_index(pos, constants.GRID_SIZE)
-        self.x, self.y = coord
+        if coord[0] <= constants.GRID_X and coord[1] <= constants.GRID_Y:
+            self.x, self.y = coord
 
     def place(self, pos : tuple, turrets : list[Turret], array, spawners : list[Spawner], tower : Tower):
         coord = pygameUtils.get_grid_index(pos, constants.GRID_SIZE)

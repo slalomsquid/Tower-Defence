@@ -26,6 +26,13 @@ def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], bull
                     pygame.draw.rect(SCREEN, constants.CYAN, pygame.Rect(col_idx*constants.GRID_SIZE, row_idx*constants.GRID_SIZE, constants.GRID_SIZE, constants.GRID_SIZE))
                 # case 4:
                 #     pygame.draw.circle(SCREEN, constants.GREY, pygameUtils.get_centre_pos_from_idx((col_idx, row_idx), constants.GRID_SIZE), constants.GRID_SIZE//2-1)
+    
+    pygame.draw.line(SCREEN, constants.WHITE, (len(array[0])*constants.GRID_SIZE,0), (len(array[0])*constants.GRID_SIZE,constants.HEIGHT))
+    pygame.draw.line(SCREEN, constants.WHITE, (0, len(array)*constants.GRID_SIZE), (constants.WIDTH, len(array)*constants.GRID_SIZE))
+
+    for bullet in bullets:
+        pygame.draw.circle(SCREEN, constants.PURPLE, (bullet.pos), 2)
+
 
     for enemy in enemies:
         # # enemy_rect = pygame.Rect(0,0, enemy.width, enemy.height)
@@ -43,9 +50,6 @@ def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], bull
         surf : pygame.Surface = turret.draw()
         SCREEN.blit(surf, (0,0))
 
-    for bullet in bullets:
-        pygame.draw.circle(SCREEN, constants.PURPLE, (bullet.pos), 2)
-
     # left here so i dont forget how to make them
     # player_rect = pygame.Rect(player.x*constants.GRID_SIZE+player.rect.x,player.y*constants.GRID_SIZE+player.rect.y,player.rect.w,player.rect.h)
     # player_rect = player.rect.copy()
@@ -55,7 +59,9 @@ def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], bull
     for point in points:
         pygame.draw.circle(SCREEN, constants.GREEN, point, 2)
 
-    pygameUtils.render_text(str(money), (constants.WIDTH-70, 10), constants.GREEN, SCREEN, 25)
+    money_pos : list = list(pygameUtils.get_centre_pos_from_idx((len(array[0])+2, 0), constants.GRID_SIZE))
+    money_pos[0] -= 1.5*constants.GRID_SIZE
+    pygameUtils.render_text(str(money), money_pos, constants.GREEN, SCREEN, 25, True)
 
     cursor_rect = cursor.rect.copy()
     cursor_rect.centerx, cursor_rect.centery = pygameUtils.get_centre_pos_from_idx((cursor.x, cursor.y), constants.GRID_SIZE)
@@ -110,7 +116,7 @@ def main():
     #     [1,1,1,1,1,1,1,1,1,1]
     # ]
 
-    map_array = [
+    map_array : list[list] = [
         [0,0,0,0,0,0,0,0,0,0],
         [0,2,0,0,0,0,0,0,3,0],
         [0,0,0,0,1,0,0,0,0,0],
@@ -183,7 +189,9 @@ def main():
                 case pygame.MOUSEBUTTONDOWN:
                     match event.button:
                         case 1: # 1 represents the left mouse button
-                            cursor.place(mouse_pos, turrets, map_array, spawners, tower)
+                            if money >= 50:
+                                cursor.place(mouse_pos, turrets, map_array, spawners, tower)
+                                money -= 50
                 case pygame.KEYDOWN:
                     if any(event.key == key for key in keybinds.shoot):
                         # bullet = Bullet(player.rect.centerx, player.rect.centery, player.rotation, 5)
@@ -208,8 +216,15 @@ def main():
         for turret in turrets:
             points += turret.update(delta_time, enemies, bullets)
 
+        num_enemy = len(enemies)
+
         for bullet in bullets:
             bullet.update(delta_time, enemies)
+
+        new_num_enemy = len(enemies)
+
+        if new_num_enemy < num_enemy:
+            money += 10 * -(new_num_enemy-num_enemy)
 
         bullets[:] = [b for b in bullets if not getattr(b, 'kill', False)]
 
