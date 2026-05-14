@@ -1,7 +1,7 @@
 import pygame, random, pygameUtils, constants, numpy as np
 
 class Enemy():
-    def __init__(self, size, pos : tuple, speed=10):
+    def __init__(self, size, pos : tuple, speed=10, health=100):
         self.rect = pygame.Rect(0, 0, size, size)
         self.rect.center = (0,0)
         """rect x,y is an offset from the center (declared by self.x and y)"""
@@ -12,6 +12,8 @@ class Enemy():
         self.height = size
         self.speed = speed
         self.block = [1,4,5,6,7,8]
+        self.health = health
+        self.damage = 10
 
     # def handle_movement(self, dt, array, player):
     #     path : list[tuple] = pygameUtils.find_path(array, (self.y,self.x), (player.y,player.x))
@@ -48,7 +50,7 @@ class Enemy():
         player_rect_pos = pygameUtils.get_centre_pos_from_idx((target.x, target.y), constants.GRID_SIZE)
         # return [pygameUtils.get_centre_pos_from_idx(next_coord, constants.GRID_SIZE), current_rect_pos, player_rect_pos]
         
-        new_rect_pos = pygameUtils.move_towards(current_rect_pos, next_pos, self.speed*dt)
+        new_rect_pos = pygameUtils.move_towards(current_rect_pos, next_pos, (self.speed+random.randrange(-10,10))*dt)
 
         # self.rect.centerx, self.rect.centery = tuple(pygameUtils.get_difference(new_rect_pos, current_rect_pos))
 
@@ -79,6 +81,12 @@ class Enemy():
         # return [new_rect_pos]
         # next_rect_pos = pygameUtils.move_towards(np.array(self.rect.centerx, self.rect.centery), np.array(player.))
 
+    def draw(self):
+        surf : pygame.Surface = pygame.Surface((constants.WIDTH, constants.HEIGHT), pygame.SRCALPHA)
+        enemy_rect = self.rect.copy()
+        enemy_rect.centerx, enemy_rect.centery = np.array(pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)) + np.array([self.rect.centerx, self.rect.centery])
+        pygame.draw.rect(surf, constants.RED, enemy_rect)
+        return surf
 
 class Player():
     def __init__(self, size, pos : tuple):
@@ -98,42 +106,153 @@ class Player():
             print("yya")
 
 class Spawner():
-    def __init__(self, pos, frequency, delay):
+    def __init__(self, pos, frequency, max_enemies, delay=0):
         self.pos = pos
         self.frequency : float = frequency
         self.time_since_last : float = frequency-delay
+        self.enemies_released : int = 0 # trying not to say produced
+        self.max_enemies = max_enemies
 
     def update(self, dt, enemies):
-
-        if self.time_since_last >= self.frequency:
-            self.time_since_last = 0.0
-
-            # enemies.append(Enemy(15, (2, 3), 10))
-            enemies.append(Enemy(15, self.pos, 10))
 
         self.time_since_last += dt
 
+        if self.time_since_last < self.frequency or self.enemies_released >= self.max_enemies:
+            return
+
+        self.time_since_last = 0.0
+
+        enemies.append(Enemy(15, self.pos, 20))
+        self.enemies_released +=1
+
 class Tower():
-    def __init__(self, pos : tuple, health):
-        self.x : int = pos[0]
-        self.y : int = pos[1]
+    def __init__(self, pos : tuple, health, frequency):
+        self.x = pos[0]
+        self.y = pos[1]
         self.rect = pygame.Rect(self.x, self.y, constants.GRID_SIZE, constants.GRID_SIZE)
         self.health = health
 
-    def update(self, dt, enemies):
+class Bullet():
+    def __init__(self, pos : tuple, size, speed, direction_vector, damage, max_dist=1000):
+        self.pos : tuple = pos
+        self.velocity = np.array(direction_vector * speed)
+        self.damage = damage
+        self.max_dist = max_dist
+        self.speed = speed
+        # seld
+        self.distance_travelled = 0.0
+        self.size = size
+        self.kill = False
 
-        pass
+    def update(self, dt, enemies : list[Enemy]):
+
+        # self.time_since_last += dt
+
+        # self.time_since_last = 0.0
+
+        self.distance_travelled += self.speed
+
+        self.pos = tuple(np.array(self.pos) + np.array(self.velocity))
+
+        # self.enemies = [
+        #     enemy for enemy in enemies 
+        #     if pygameUtils.get_distance_between(tuple(pygameUtils.get_centre_pos_from_idx(enemy.x, enemy.y)), tuple(self.pos)) >= constants.GRID_SIZE
+        # ]
+
+        for enemy in enemies:
+            # enemy_pos = pygameUtils.get_centre_pos_from_idx(enemy.x, enemy.y)
+            enemy_pos = pygameUtils.get_centre_pos_from_idx((enemy.x, enemy.y), constants.GRID_SIZE)
+            if pygameUtils.get_distance_between(tuple(enemy_pos), tuple(self.pos)) < enemy.height:
+                enemies.remove(enemy)
+                self.kill = True
+                break
+
+        if self.distance_travelled >= self.max_dist:
+            self.kill = True
+
+        # Gahh so repetetive, but good, its good right? its so good actually object oriented, thankyou abhisek 
 
 class Turret():
-    def __init__(self, coord : tuple, health):
+    def __init__(self, coord : tuple, health, frequency):
         self.x : int = coord[0]
         self.y : int = coord[1]
         self.rect = pygame.Rect(self.x, self.y, constants.GRID_SIZE, constants.GRID_SIZE)
         self.health = health
+        self.frequency : float = frequency
+        self.angle : float = 0.0
+        self.range = 100
+        self.time_since_last = 0.0
 
-    def update(self, dt, enemies):
+    # def update(self, dt, enemies, bullets):
 
-        pass
+    #     self.time_since_last += dt
+
+    #     if self.time_since_last < self.frequency:
+    #         return
+
+    #     self.time_since_last = 0.0
+
+    #     to_angle = 0
+
+    #     bullets.append(Bullet((self.x, self.y), 10, to_angle, 100))
+
+    def update(self, dt, enemies, bullets):
+            points = []
+            self.time_since_last += dt
+
+            # Get the turret's actual screen position (center of its tile)
+            self.center = pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)
+
+            target_pos = None
+            distance_to_target = self.range
+
+            for enemy in enemies:
+                # Calculate Enemy Screen Position: 
+                # (Grid Center) + (Sub-pixel Rect Offset)
+                enemy_grid_center = pygameUtils.get_centre_pos_from_idx((enemy.x, enemy.y), constants.GRID_SIZE)
+                enemy_pixel_x = enemy_grid_center[0] + enemy.rect.centerx
+                enemy_pixel_y = enemy_grid_center[1] + enemy.rect.centery
+
+                # Calculate distance from Turret Center to Enemy Pixel Position
+                dx = enemy_pixel_x - self.center[0]
+                dy = enemy_pixel_y - self.center[1]
+                # distance = pygameUtils.get_distance_between(dx, dy)
+                distance = pygameUtils.get_distance_between(enemy_grid_center, pygameUtils.get_centre_pos_from_idx((self.x,self.y), constants.GRID_SIZE))
+
+                # Track the closest one within range
+                if distance <= self.range and distance < distance_to_target:
+                    distance_to_target = distance
+                    target_pos = (enemy_pixel_x, enemy_pixel_y)
+
+            # 4. Update Rotation (Tracking)
+            if target_pos:
+                points.append((target_pos[0], target_pos[1]))
+                # Calculate vector from turret to the pixel target
+                rel_x = target_pos[0] - self.center[0]
+                rel_y = target_pos[1] - self.center[1]
+                
+                # Update angle so the draw() function reflects the new direction
+                # Assuming vector_to_angle takes (x, y)
+                self.angle = pygameUtils.vector_to_angle((rel_x, rel_y))
+
+                # 5. Shooting Logic
+                if self.time_since_last >= self.frequency:
+                    bullets.append(Bullet(self.center, 2, 10, pygameUtils.angle_to_vector(self.angle), 100))
+                    self.time_since_last = 0.0
+
+            # else:
+            #     self.angle += 10*dt
+
+            return points
+
+    def draw(self):
+        surf : pygame.Surface = pygame.Surface((constants.WIDTH, constants.HEIGHT), pygame.SRCALPHA)
+        target_pos : tuple = pygameUtils.get_centre_pos_from_idx((self.x, self.y), constants.GRID_SIZE)
+        pygame.draw.circle(surf, constants.GREY, target_pos, constants.GRID_SIZE//4-1)
+        # pygame.draw.polygon(surf, constants.LIGHT_GREY+(100,), pygameUtils.create_view_cone_polygon(target_pos, self.angle, 30, self.range))
+        pygame.draw.line(surf, constants.LIGHT_GREY, (target_pos), tuple(pygameUtils.move_at_angle(target_pos, self.angle, 20)), 2)
+        # pygame.draw.circle(surf, constants.DARK_GREY, target_pos+(pygameUtils.angle_to_vector(self.angle)*self.range), 10)
+        return surf
 
 class Cursor():
     def __init__(self, pos : tuple, color : tuple, alpha : int):
@@ -154,14 +273,11 @@ class Cursor():
         for spawner in spawners:
             array[y][x] = 4
             path = pygameUtils.find_path(array, (spawner.pos[1], spawner.pos[0]), (tower.y, tower.x), [1,4])
-            # print(path)
             if not path:
                 array[y][x] = 0 # Clean up before leaving lol
                 return
-        turrets.append(Turret(coord, 100))
+        turrets.append(Turret(coord, 100, 1))
         array[y][x] = 4
-        # print(f"placement at {coord}")
-        # print(y)
 
     def update_pos(self, dt, enemies):
 

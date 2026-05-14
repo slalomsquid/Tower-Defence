@@ -81,7 +81,7 @@ def move_in_direction(vect, dir, velocity):
     displacement = dir * velocity
     return vect + displacement
 
-def move_at_angle(vect, angle, velocity):
+def move_at_angle(vect, angle : float, velocity : float):
     dir = angle_to_vector(angle)
     displacement = dir * velocity
     # return np.array(vect + displacement, dtype=object)
@@ -236,17 +236,17 @@ def is_point_in_triangle(pos, p1, p2, p3):
     # Use a small epsilon for float precision
     return abs(total_area - (area1 + area2 + area3)) < 0.1
 
-def create_view_cone_polygon(self):
-    view_left = self.rotation - self.fov/2
-    view_right = self.rotation + self.fov/2
+def create_view_cone_polygon(pos, rotation, fov, range):
+    view_left = rotation - fov/2
+    view_right = rotation + fov/2
 
     view_left_direction = angle_to_vector(view_left)
     view_right_direction = angle_to_vector(view_right)
 
     points = [
-        (self.x, self.y), 
-        (self.x + view_left_direction[0]*self.view_distance, self.y + view_left_direction[1]*self.view_distance), 
-        (self.x + view_right_direction[0]*self.view_distance, self.y + view_right_direction[1]*self.view_distance)
+        (pos[0], pos[1]), 
+        (pos[0] + view_left_direction[0]*range, pos[1] + view_left_direction[1]*range), 
+        (pos[0] + view_right_direction[0]*range, pos[1] + view_right_direction[1]*range)
     ]
     return points
 

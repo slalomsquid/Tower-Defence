@@ -1,5 +1,5 @@
 import constants, keybinds, pygame, pygameUtils, numpy as np
-from classes import Enemy, Player, Spawner, Tower, Turret, Cursor
+from classes import Enemy, Player, Spawner, Tower, Turret, Cursor, Bullet
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -8,7 +8,7 @@ SCREEN = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
 pygame.display.set_caption("Tower defence")
 
 # def draw(array : list[list], enemies : list[Enemy], player : Player, points : list[tuple], money):
-def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], points : list[tuple], money, cursor : Cursor):
+def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], bullets : list[Bullet], points : list[tuple], money, cursor : Cursor):
     SCREEN.fill(constants.BLACK)
     
     for row_idx, row in enumerate(array):
@@ -28,15 +28,23 @@ def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], poin
                 #     pygame.draw.circle(SCREEN, constants.GREY, pygameUtils.get_centre_pos_from_idx((col_idx, row_idx), constants.GRID_SIZE), constants.GRID_SIZE//2-1)
 
     for enemy in enemies:
-        # enemy_rect = pygame.Rect(0,0, enemy.width, enemy.height)
-        enemy_rect = enemy.rect.copy()
-        enemy_rect.centerx, enemy_rect.centery = np.array(pygameUtils.get_centre_pos_from_idx((enemy.x, enemy.y), constants.GRID_SIZE)) + np.array([enemy.rect.centerx, enemy.rect.centery])
-        # enemy_rect = pygame.Rect(enemy.x*constants.GRID_SIZE+enemy.rect.x,enemy.y*constants.GRID_SIZE+enemy.rect.y,enemy.rect.w,enemy.rect.h)
-        pygame.draw.rect(SCREEN, constants.RED, enemy_rect)
+        # # enemy_rect = pygame.Rect(0,0, enemy.width, enemy.height)
+        # enemy_rect = enemy.rect.copy()
+        # enemy_rect.centerx, enemy_rect.centery = np.array(pygameUtils.get_centre_pos_from_idx((enemy.x, enemy.y), constants.GRID_SIZE)) + np.array([enemy.rect.centerx, enemy.rect.centery])
+        # # enemy_rect = pygame.Rect(enemy.x*constants.GRID_SIZE+enemy.rect.x,enemy.y*constants.GRID_SIZE+enemy.rect.y,enemy.rect.w,enemy.rect.h)
+        # pygame.draw.rect(SCREEN, constants.RED, enemy_rect)
+
+        surf : pygame.Surface = enemy.draw()
+        SCREEN.blit(surf, (0,0))
 
     for turret in turrets:
-        target_pos = pygameUtils.get_centre_pos_from_idx((turret.x, turret.y), constants.GRID_SIZE)
-        pygame.draw.circle(SCREEN, constants.GREY, target_pos, constants.GRID_SIZE//2-1)
+        # target_pos = pygameUtils.get_centre_pos_from_idx((turret.x, turret.y), constants.GRID_SIZE)
+        # pygame.draw.circle(SCREEN, constants.GREY, target_pos, constants.GRID_SIZE//2-1)
+        surf : pygame.Surface = turret.draw()
+        SCREEN.blit(surf, (0,0))
+
+    for bullet in bullets:
+        pygame.draw.circle(SCREEN, constants.PURPLE, (bullet.pos), 2)
 
     # left here so i dont forget how to make them
     # player_rect = pygame.Rect(player.x*constants.GRID_SIZE+player.rect.x,player.y*constants.GRID_SIZE+player.rect.y,player.rect.w,player.rect.h)
@@ -59,31 +67,73 @@ def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], poin
 
 def main():
 
+    # map_array = [
+    #     [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [2,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [0,1,0,0,0,0,1,3,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [0,1,1,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    # ]
+
+    # map_array = [
+    #     [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [2,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [0,1,0,0,0,0,1,3,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [0,1,1,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+    #     [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    # ]
+
+    # map_array = [
+    #     [1,1,1,1,1,1,1,1,1,1],
+    #     [1,2,0,0,1,0,0,0,3,1],
+    #     [1,1,1,0,1,0,1,1,0,1],
+    #     [1,0,0,0,0,0,1,0,0,1],
+    #     [1,0,1,1,1,0,1,0,1,1],
+    #     [1,0,1,2,1,0,0,0,0,1],
+    #     [1,0,1,0,1,1,1,1,0,1],
+    #     [1,0,0,0,0,0,0,1,0,1],
+    #     [1,1,1,1,1,1,0,0,0,1],
+    #     [1,1,1,1,1,1,1,1,1,1]
+    # ]
+
     map_array = [
-        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [2,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [0,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [0,1,0,0,0,0,1,3,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [0,1,1,0,1,0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,2,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,2,0,0,0,0,0,0,3,0],
+        [0,0,0,0,1,0,0,0,0,0],
+        [0,0,1,0,1,0,0,0,0,0],
+        [0,0,1,0,1,1,0,0,0,0],
+        [0,0,1,0,0,0,0,0,0,0],
+        [0,0,1,1,1,1,0,0,0,0],
+        [0,2,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0]
     ]
 
     spawners : list[Spawner] = []
 
-    tower = Tower((0,0), 100)
+    tower = Tower((0,0), 100, 1)
 
     for row_idx, row in enumerate(map_array):
         for col_idx, item in enumerate(row):
             match item:
                 case 2:
-                    spawners.append(Spawner((col_idx, row_idx), 2, 0))
+                    spawners.append(Spawner((col_idx, row_idx), 2, 100, 0))
                 case 3:
+                    # towers.append(Tower((col_idx, row_idx), 100, 10))
                     tower.x, tower.y = col_idx, row_idx
 
 
@@ -91,6 +141,8 @@ def main():
     enemies : list[Enemy] = []
 
     turrets : list[Turret] = []
+
+    bullets : list[Bullet] = []
 
     # player = Player(10, (8, 4))
 
@@ -151,10 +203,17 @@ def main():
 
         for enemy in enemies:
             if ans := enemy.handle_movement(delta_time, map_array, tower):
-                # print(ans)
                 points += ans
 
-        draw(map_array, enemies, turrets, points, money, cursor)
+        for turret in turrets:
+            points += turret.update(delta_time, enemies, bullets)
+
+        for bullet in bullets:
+            bullet.update(delta_time, enemies)
+
+        bullets[:] = [b for b in bullets if not getattr(b, 'kill', False)]
+
+        draw(map_array, enemies, turrets, bullets, points, money, cursor)
 
 if __name__ == "__main__":
     main()
