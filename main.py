@@ -1,5 +1,5 @@
 import constants, keybinds, pygame, pygameUtils, numpy as np
-from classes import Enemy, Player, Spawner, Tower, Turret, Cursor, Bullet
+from classes import Enemy, Player, Spawner, Tower, Turret, Cursor, Bullet, Button
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -8,7 +8,7 @@ SCREEN = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
 pygame.display.set_caption("Tower defence")
 
 # def draw(array : list[list], enemies : list[Enemy], player : Player, points : list[tuple], money):
-def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], bullets : list[Bullet], points : list[tuple], money, cursor : Cursor):
+def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], bullets : list[Bullet], points : list[tuple], money, cursor : Cursor, ui_buttons):
     SCREEN.fill(constants.BLACK)
     
     for row_idx, row in enumerate(array):
@@ -31,7 +31,8 @@ def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], bull
     pygame.draw.line(SCREEN, constants.WHITE, (0, len(array)*constants.GRID_SIZE), (constants.WIDTH, len(array)*constants.GRID_SIZE))
 
     for bullet in bullets:
-        pygame.draw.circle(SCREEN, constants.PURPLE, (bullet.pos), 2)
+        # pygame.draw.circle(SCREEN, constants.PURPLE, (bullet.pos), 2)
+        pygame.draw.circle(SCREEN, constants.PURPLE, (bullet.pos), bullet.size)
 
 
     for enemy in enemies:
@@ -58,6 +59,10 @@ def draw(array : list[list], enemies : list[Enemy], turrets : list[Turret], bull
 
     for point in points:
         pygame.draw.circle(SCREEN, constants.GREEN, point, 2)
+
+    for btn in ui_buttons:
+        btn.is_hovered = btn.rect.collidepoint(pygame.mouse.get_pos())
+        btn.draw(SCREEN)
 
     money_pos : list = list(pygameUtils.get_centre_pos_from_idx((len(array[0])+2, 0), constants.GRID_SIZE))
     money_pos[0] -= 1.5*constants.GRID_SIZE
@@ -129,6 +134,99 @@ def main():
         [0,0,0,0,0,0,0,0,0,0]
     ]
 
+    TURRET_TYPES = {
+        "Wall": {
+            "cost": 10
+        },
+        "Standard": {
+            "cost": 50,
+            "class": 4,
+            "range": 100,
+            "freq": 1.0,
+            "health": 100,
+            # "bullet": {"size":2,"speed":10,"damage":50,"color":(PURPLE)},
+            "bullet":Bullet((0,0), 2, 10, (0,0), 40),
+            "color": (150, 150, 150) # Grey
+        },
+        "Sniper": {
+            "cost": 150,
+            "class": 4,
+            "range": 250,
+            "freq": 2.5,
+            "health": 100,
+            "bullet":Bullet((0,0), 2, 10, (0,0), 80),
+            "color": (50, 50, 200) # Blue-ish
+        },
+        "Rapid": {
+            "cost": 100,
+            "class": 4,
+            "range": constants.GRID_SIZE*1.5,
+            "freq": 0.2,
+            "health": 100,
+            "bullet":Bullet((0,0), 2, 10, (0,0), 10),
+            "color": (200, 50, 50) # Red-ish
+        },
+        "Plazma_baller": {
+            "cost": 200,
+            "class": 4,
+            "range": constants.GRID_SIZE*1.5,
+            "freq": 4,
+            "health": 100,
+            "bullet":Bullet((0,0), 10, 5, (0,0), 10, constants.GRID_SIZE*1.5, False, True),
+            "color": (200, 50, 50) # Red-ish
+        },
+        "Goo-Gun": {
+            "cost": 200,
+            "class": 4,
+            "range": constants.GRID_SIZE*10,
+            "freq": 0.2,
+            "health": 100,
+            "bullet":Bullet((0,0), 10, 1, (0,0), 1, constants.GRID_SIZE*2, False, True),
+            "color": (200, 50, 50) # Red-ish
+        },
+        "Cannon": {
+            "cost": 100,
+            "class": 4,
+            "range": constants.GRID_SIZE*5,
+            "freq": 2,
+            "health": 100,
+            "bullet":Bullet((0,0), 5, 10, (0,0), 120, constants.GRID_SIZE*5),
+            "color": (200, 50, 50) # Red-ish
+        },
+        "Lazer": {
+            "cost": 100,
+            "class": 4,
+            "range": constants.GRID_SIZE*5,
+            "freq": 0.01,
+            "health": 100,
+            "bullet":Bullet((0,0), 1, 10, (0,0), 10, constants.GRID_SIZE*5),
+            "color": (200, 0, 0) # Red-ish
+        },
+        "Nuke": {
+            "cost": 100,
+            "class": 4,
+            "range": constants.GRID_SIZE*2,
+            "freq": 20,
+            "health": 100,
+            "bullet":Bullet((0,0), 1000, 1, (0,0), 1000, constants.GRID_SIZE*1, False, True),
+            "color": (200, 0, 0) # Red-ish
+        },
+        "Breakoff": {
+            "cost": 100,
+            "class": 4,
+            "range": constants.GRID_SIZE*2,
+            "freq": 1,
+            "health": 100,
+            "bullet":Bullet((0,0), 2, 10, (0,0), 20, constants.GRID_SIZE*1, True, False, Bullet((0,0), 2, 10, (0,0), 20), 6, 10, 0),
+            "color": (200, 0, 0) # Red-ish
+        },
+        "Sell": {
+            "cost": -10,
+            "class": 0,
+        }
+    }
+
+
     spawners : list[Spawner] = []
 
     tower = Tower((0,0), 100, 1)
@@ -137,7 +235,7 @@ def main():
         for col_idx, item in enumerate(row):
             match item:
                 case 2:
-                    spawners.append(Spawner((col_idx, row_idx), 2, 100, 0))
+                    spawners.append(Spawner((col_idx, row_idx), 2, 99999, 0))
                 case 3:
                     # towers.append(Tower((col_idx, row_idx), 100, 10))
                     tower.x, tower.y = col_idx, row_idx
@@ -161,6 +259,22 @@ def main():
     timer : float = 0.0
 
     running = True
+
+    button_width = 100
+    button_height = 40
+    ui_buttons = []
+    start_y = 100 # Position below the money text
+
+    for i, (t_name, t_data) in enumerate(TURRET_TYPES.items()):
+        ui_buttons.append(Button(
+            constants.WIDTH - 120, # Docked to the right
+            start_y + (i * (button_height + 10)), 
+            button_width, 
+            button_height, 
+            f"{t_name} (${t_data['cost']})", 
+            t_name,
+            (100, 100, 100)
+        ))
 
     while running:
 
@@ -186,12 +300,31 @@ def main():
                     cursor.move_to_mouse(mouse_pos)
                     # mouse_rel = event.rel   
                     pass
+                # case pygame.MOUSEBUTTONDOWN:
+                #     match event.button:
+                #         case 1: # 1 represents the left mouse button
+                #             if money >= 50:
+                #                 cursor.place(mouse_pos, turrets, map_array, spawners, tower)
+                #                 money -= 50
+
                 case pygame.MOUSEBUTTONDOWN:
-                    match event.button:
-                        case 1: # 1 represents the left mouse button
-                            if money >= 50:
-                                cursor.place(mouse_pos, turrets, map_array, spawners, tower)
-                                money -= 50
+                    if event.button == 1:
+                        # Check if a ui button clicked
+                        button_clicked = False
+                        for btn in ui_buttons:
+                            btn.is_selected = False
+                            if btn.check_click(event.pos):
+                                cursor.selected_type = btn.turret_type
+                                button_clicked = True
+                                btn.is_selected = True
+                        
+                        # If no button clicked, try to place a turret
+                        if not button_clicked:
+                            cost = TURRET_TYPES[cursor.selected_type]["cost"]
+                            if money >= cost:
+                                # Pass the dictionary so the cursor knows the stats
+                                if cursor.place(mouse_pos, turrets, map_array, spawners, tower, TURRET_TYPES):
+                                    money -= cost
                 case pygame.KEYDOWN:
                     if any(event.key == key for key in keybinds.shoot):
                         # bullet = Bullet(player.rect.centerx, player.rect.centery, player.rotation, 5)
@@ -219,7 +352,7 @@ def main():
         num_enemy = len(enemies)
 
         for bullet in bullets:
-            bullet.update(delta_time, enemies)
+            bullet.update(delta_time, enemies, bullets)
 
         new_num_enemy = len(enemies)
 
@@ -228,7 +361,7 @@ def main():
 
         bullets[:] = [b for b in bullets if not getattr(b, 'kill', False)]
 
-        draw(map_array, enemies, turrets, bullets, points, money, cursor)
+        draw(map_array, enemies, turrets, bullets, points, money, cursor, ui_buttons)
 
 if __name__ == "__main__":
     main()

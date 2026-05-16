@@ -1,7 +1,7 @@
-import pygame, random, pygameUtils, constants, numpy as np
+import pygame, random, pygameUtils, constants, numpy as np, copy
 
 class Enemy():
-    def __init__(self, size, pos : tuple, speed=10, health=100):
+    def __init__(self, size, pos : tuple, color : tuple, speed=10, health=100, reward=10):
         self.rect = pygame.Rect(0, 0, size, size)
         self.rect.center = (0,0)
         """rect x,y is an offset from the center (declared by self.x and y)"""
@@ -15,6 +15,12 @@ class Enemy():
         self.max_health = health
         self.health = health
         self.damage = 10
+        self.reward = reward
+        # unfortunate but default fails due to circular import
+        if color:
+            self.color = color
+        else:
+            self.color = constants.RED
 
     # def handle_movement(self, dt, array, player):
     #     path : list[tuple] = pygameUtils.find_path(array, (self.y,self.x), (player.y,player.x))
@@ -133,7 +139,7 @@ class Spawner():
 
         self.time_since_last = 0.0
 
-        enemies.append(Enemy(15, self.pos, 20))
+        enemies.append(Enemy(15+(self.enemies_released*0.1), self.pos, constants.RED, 20+self.enemies_released*2, 100+self.enemies_released*2))
         self.enemies_released +=1
 
 class Tower():
@@ -144,9 +150,9 @@ class Tower():
         self.health = health
 
 class Bullet():
-    def __init__(self, pos : tuple, size, speed, direction_vector, damage, max_dist=1000):
+    def __init__(self, pos : tuple, size, speed, direction_vector, damage, max_dist=1000.0, destroy=True, aoe=False, second = None, break_num = 0, break_vel = 0, start_angle = 0):
         self.pos : tuple = pos
-        self.velocity = np.array(direction_vector * speed)
+        self.velocity = np.array(np.array(direction_vector) * speed)
         self.damage = damage
         self.max_dist = max_dist
         self.speed = speed
@@ -154,8 +160,15 @@ class Bullet():
         self.distance_travelled = 0.0
         self.size = size
         self.kill = False
+        self.destroy = destroy
+        self.aoe = aoe
+        """If false, collision check stops afer single hit"""
+        self.second = second
+        self.break_num = break_num
+        self.break_vel = break_vel
+        self.start_angle = start_angle
 
-    def update(self, dt, enemies : list[Enemy]):
+    def update(self, dt, enemies : list[Enemy], bullets):
 
         # self.time_since_last += dt
 
@@ -174,12 +187,22 @@ class Bullet():
             # enemy_pos = pygameUtils.get_centre_pos_from_idx(enemy.x, enemy.y)
             enemy_grid_pos = pygameUtils.get_centre_pos_from_idx((enemy.x, enemy.y), constants.GRID_SIZE)
             enemy_center_pos = np.array(enemy_grid_pos + np.array([enemy.rect.centerx, enemy.rect.centery]))
-            if pygameUtils.get_distance_between(tuple(enemy_center_pos), tuple(self.pos)) < enemy.height:
+            if pygameUtils.get_distance_between(tuple(enemy_center_pos), tuple(self.pos)) < enemy.height+self.size:
                 enemy.health -= self.damage
                 if enemy.health <= 0:
                     enemies.remove(enemy)
-                self.kill = True
-                break
+                if self.destroy:
+                    self.kill = True
+                if self.second:
+                    angle_step = 360//self.break_num
+                    for angle in range(0,360,angle_step):
+                        new_bullet : Bullet = copy.copy(self.second)
+                        new_bullet.pos = self.pos
+                        new_bullet.velocity = np.array(pygameUtils.angle_to_vector(angle)) * self.break_vel
+                        bullets.append(new_bullet)
+
+                if not self.aoe:
+                    break
 
         if self.distance_travelled >= self.max_dist:
             self.kill = True
@@ -187,7 +210,7 @@ class Bullet():
         # Gahh so repetetive, but good, its good right? its so good actually object oriented, thankyou abhisek 
 
 class Turret():
-    def __init__(self, coord : tuple, health, frequency):
+    def __init__(self, coord : tuple, health, frequency, bullet : Bullet):
         self.x : int = coord[0]
         self.y : int = coord[1]
         self.rect = pygame.Rect(self.x, self.y, constants.GRID_SIZE, constants.GRID_SIZE)
@@ -197,6 +220,7 @@ class Turret():
         self.angle : float = 0.0
         self.range = 100
         self.time_since_last = 0.0
+        self.bullet = bullet
 
     # def update(self, dt, enemies, bullets):
 
@@ -239,7 +263,7 @@ class Turret():
                     distance_to_target = distance
                     target_pos = (enemy_pixel_x, enemy_pixel_y)
 
-            # 4. Update Rotation (Tracking)
+            # Update Rotation (Tracking)
             if target_pos:
                 points.append((target_pos[0], target_pos[1]))
                 # Calculate vector from turret to the pixel target
@@ -250,9 +274,13 @@ class Turret():
                 # Assuming vector_to_angle takes (x, y)
                 self.angle = pygameUtils.vector_to_angle((rel_x, rel_y))
 
-                # 5. Shooting Logic
+                # Shooting Logic
                 if self.time_since_last >= self.frequency:
-                    bullets.append(Bullet(self.center, 2, 10, pygameUtils.angle_to_vector(self.angle+random.randrange(-1,1)*0.5), 50))
+                    # bullets.append(Bullet(self.center, 2, 10, pygameUtils.angle_to_vector(self.angle+random.randrange(-1,1)*0.5), 50))
+                    bullet = copy.copy(self.bullet)
+                    bullet.pos = self.center
+                    bullet.velocity = np.array(pygameUtils.angle_to_vector(self.angle+random.randrange(-1,1)*0.5) * bullet.speed)
+                    bullets.append(bullet)
                     self.time_since_last = 0.0
 
             # else:
@@ -269,35 +297,109 @@ class Turret():
         # pygame.draw.circle(surf, constants.DARK_GREY, target_pos+(pygameUtils.angle_to_vector(self.angle)*self.range), 10)
         return surf
 
+# class Cursor():
+#     def __init__(self, pos : tuple, color : tuple, alpha : int):
+#         self.x : int = pos[0]
+#         self.y : int = pos[1]
+#         self.rect = pygame.Rect(self.x, self.y, constants.GRID_SIZE, constants.GRID_SIZE)
+#         self.color : tuple = color + (alpha,)
+
+#     def move_to_mouse(self, pos : tuple):
+#         coord = pygameUtils.get_grid_index(pos, constants.GRID_SIZE)
+#         if coord[0] <= constants.GRID_X and coord[1] <= constants.GRID_Y:
+#             self.x, self.y = coord
+
+#     def place(self, pos : tuple, turrets : list[Turret], array, spawners : list[Spawner], tower : Tower):
+#         coord = pygameUtils.get_grid_index(pos, constants.GRID_SIZE)
+#         x, y = coord
+#         if array[y][x] != 0:
+#             return
+#         for spawner in spawners:
+#             array[y][x] = 4
+#             path = pygameUtils.find_path(array, (spawner.pos[1], spawner.pos[0]), (tower.y, tower.x), [1,4])
+#             if not path:
+#                 array[y][x] = 0 # Clean up before leaving lol
+#                 return
+#         turrets.append(Turret(coord, 100, 1))
+#         array[y][x] = 4
+
+#     def update_pos(self, dt, enemies):
+
+#         pass
+
 class Cursor():
     def __init__(self, pos : tuple, color : tuple, alpha : int):
         self.x : int = pos[0]
         self.y : int = pos[1]
         self.rect = pygame.Rect(self.x, self.y, constants.GRID_SIZE, constants.GRID_SIZE)
         self.color : tuple = color + (alpha,)
+        self.selected_type = "Standard" # Default starting turret
 
     def move_to_mouse(self, pos : tuple):
         coord = pygameUtils.get_grid_index(pos, constants.GRID_SIZE)
         if coord[0] <= constants.GRID_X and coord[1] <= constants.GRID_Y:
             self.x, self.y = coord
 
-    def place(self, pos : tuple, turrets : list[Turret], array, spawners : list[Spawner], tower : Tower):
+    def place(self, pos, turrets, array, spawners, tower, turret_data):
         coord = pygameUtils.get_grid_index(pos, constants.GRID_SIZE)
         x, y = coord
+
+        # Check grid bounds
+        if y >= len(array) or x >= len(array[0]):
+            return False
+
+        stats = turret_data[self.selected_type]
+
+        if stats.get("class") == 0:
+            array[y][x] = 0
+            for turret in turrets:
+                if turret.x == x and turret.y == y:
+                    turrets.remove(turret) 
+            return True
+        
+        # Check availability
         if array[y][x] != 0:
-            return
+            return False
+        
+        # Pathfinding check
+        array[y][x] = 4
         for spawner in spawners:
-            array[y][x] = 4
             path = pygameUtils.find_path(array, (spawner.pos[1], spawner.pos[0]), (tower.y, tower.x), [1,4])
             if not path:
-                array[y][x] = 0 # Clean up before leaving lol
-                return
-        turrets.append(Turret(coord, 100, 1))
-        array[y][x] = 4
+                array[y][x] = 0
+                return False
+        
+        new_turret = Turret(coord, stats["health"], stats["freq"], stats["bullet"])
+        new_turret.range = stats["range"]
+        # (Optional) store color in Turret class to draw different types
+        turrets.append(new_turret)
+        return True
 
-    def update_pos(self, dt, enemies):
+class Button():
+    def __init__(self, x, y, width, height, text, turret_type, color):
+        self.rect = pygame.Rect(x, y, width, height)
+        self.text = text
+        self.turret_type = turret_type
+        self.color = color
+        self.is_hovered = False
+        self.is_selected = False
 
-        pass
+    def draw(self, screen):
+        # Draw button background
+        bg_color = tuple(max(0, c - 30) for c in self.color) if self.is_selected else \
+           tuple(min(255, c + 30) for c in self.color) if self.is_hovered else \
+           self.color
+        pygame.draw.rect(screen, bg_color, self.rect)
+        pygame.draw.rect(screen, (255, 255, 255), self.rect, 2) # Border
+
+        # Draw text (Assuming you have access to a font)
+        font = pygame.font.SysFont("Arial", 18)
+        text_surf = font.render(self.text, True, (255, 255, 255))
+        text_rect = text_surf.get_rect(center=self.rect.center)
+        screen.blit(text_surf, text_rect)
+
+    def check_click(self, mouse_pos):
+        return self.rect.collidepoint(mouse_pos)
 
 if __name__ == "__main__":
     print("This is a utility file, not meant to be run directly")

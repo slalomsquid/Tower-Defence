@@ -2,7 +2,7 @@
 import pygame
 
 FPS = 20
-WIDTH, HEIGHT = 600, 600
+WIDTH, HEIGHT = 700, 700
 ORIGIN = [WIDTH//2, HEIGHT//2]
 
 GRID_SIZE : int = 50
